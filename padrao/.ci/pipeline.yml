@@ -1,0 +1,30 @@
+name: pipeline-padrao
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements.txt
+      - run: pytest
+
+  security-scan:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan de vulnerabilidades
+        run: ./scripts/scan.sh
+        # criticidade alta interrompe o pipeline — sem continue-on-error
+
+  build:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t app:${{ github.sha }} .

@@ -1,0 +1,39 @@
+# Copiado de padrao/.ci/pipeline.yml em 2025-11-03 e adaptado para notificar
+# o time no Slack quando o build termina — o padrão compartilhado não tinha
+# como plugar esse passo extra sem editar o arquivo original.
+
+name: pipeline-catalogo
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements.txt
+      - run: pytest
+
+  security-scan:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan de vulnerabilidades
+        run: ./scripts/scan.sh
+
+  build:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t catalogo:${{ github.sha }} .
+
+  notificar-slack:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./scripts/notificar-slack.sh "build de catalogo concluído"

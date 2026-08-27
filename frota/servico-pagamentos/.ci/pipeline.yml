@@ -1,0 +1,13 @@
+name: pipeline-pagamentos
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements.txt
+      - run: pytest
+      - run: docker build -t pagamentos:latest .
+      - run: docker push registry.example.com/pagamentos:latest
